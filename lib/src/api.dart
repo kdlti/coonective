@@ -150,11 +150,9 @@ class Api {
     return apiResponse;
   }
 
-  static Future<void> subscription(String graphQL, dynamic variable, ValueChanged<ApiResponse> callback) async {
-    await ApiConnect.execSubscription(
-      apiGraphql: () async {
-        await ApiConnect.subscription(graphQL, variable, callback);
-      },
-    );
+  static Stream<ApiResponse> subscription(String graphQL, dynamic variable) {
+    return ApiConnect.execSubscription(apiGraphql: ({required String accessToken, required String serverUri}) async* {
+      yield* ApiConnect.subscription(graphQL, variable, accessToken, serverUri);
+    });
   }
 }

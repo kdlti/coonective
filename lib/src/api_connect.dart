@@ -6,6 +6,7 @@ import 'package:coonective/src/client/api_client_authorize_token.dart';
 import 'package:coonective/src/user/api_user_access_token.dart';
 import 'package:coonective/src/user/api_user_authorize_token.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Classe ApiConnect gerencia a conexão com a API.
 class ApiConnect {
@@ -160,14 +161,9 @@ class ApiConnect {
   }
 
   // Realiza uma assiantura GraphQL.
-  static Future<void> subscription(String params, dynamic variable, ValueChanged<ApiResponse> callback) async {
-    String? accessToken = await ApiToken.getAccessToken;
-    String? serverUri = "";
-
-    if (accessToken!.isNotEmpty && serverUri.isNotEmpty) {
-      ApiConnection apiConnection = ApiConnection(accessToken, serverUri);
-      await apiConnection.subscription(params, variable, callback);
-    }
+  static Stream<ApiResponse> subscription(String params, dynamic variable, String accessToken, String serverUri) async* {
+    ApiConnection apiConnection = ApiConnection(accessToken, serverUri);
+    yield* apiConnection.subscription(params, variable);
   }
 
   // Executa a consulta ou mutação GraphQL e trata exceções.
@@ -194,7 +190,7 @@ class ApiConnect {
     }
 
     // Recupera o servidor URI
-    String? serverUri = "xxxxxx";
+    String? serverUri = dotenv.get("SERVER_URI");
 
     // Verifica se o servidor URI está definido
     //TODO: Verificar validação de URI, parece que não está funcionando como esperado
@@ -246,31 +242,33 @@ class ApiConnect {
     return apiResponse;
   }
 
-  static Future<void> execSubscription({required dynamic apiGraphql}) async {
-    bool hasConnectivity = await checkInternetConnection();
-    try {
-      if (hasConnectivity) {
-        await apiGraphql();
-      } else {
-        ApiError apiError = ApiError(
-          code: "012-NO_INTERNET_CONNECTION",
-          module: "apiConnect",
-          path: "exec AAA",
-          messages: ["Sem conexão com a Internet"],
-        );
-        Api.logError(
-          apiError.toString(),
-          error: apiError.code,
-          stackTrace: StackTrace.current,
-        );
-        throw apiError.code;
-      }
-    } catch (e) {
+  static Stream<ApiResponse> execSubscription({required Stream<ApiResponse> Function({required String accessToken, required String serverUri}) apiGraphql}) async* {
+    final hasConnectivity = await checkInternetConnection();
+
+    if (!hasConnectivity) {
+      yield ApiResponse(
+        success: false,
+        errors: [
+          ApiError(
+            code: "012-NO_INTERNET_CONNECTION",
+            module: "apiConnect",
+            path: "exec AAA",
+            messages: ["Sem conexão com a Internet"],
+          ),
+        ],
+      );
+      return;
+    }
+
+    // Verifica se o token de acesso está definido
+    String? accessToken = await ApiToken.getAccessToken;
+
+    if (accessToken == null || accessToken.isEmpty) {
       ApiError apiError = ApiError(
-        code: "013-EXCEPTION",
+        code: "008-EXCEPTION",
         module: "apiConnect",
-        path: "exec EEE",
-        messages: ["Falha na conexão com servidor API", e.toString()],
+        path: "exec",
+        messages: ["Falha na conexão com servidor API", "accessToken vazio"],
       );
       Api.logError(
         apiError.toString(),
@@ -278,6 +276,41 @@ class ApiConnect {
         stackTrace: StackTrace.current,
       );
       throw apiError.code;
+    }
+
+    // Recupera o servidor URI
+    String? serverUri = dotenv.get("SERVER_URI");
+
+    // Verifica se o servidor URI está definido
+    if (serverUri.isEmpty) {
+      ApiError apiError = ApiError(
+        code: "009-EXCEPTION",
+        module: "apiConnect",
+        path: "exec",
+        messages: ["Falha na conexão com servidor API", "serverUri vazio"],
+      );
+      Api.logError(
+        apiError.toString(),
+        error: apiError.code,
+        stackTrace: StackTrace.current,
+      );
+      throw apiError.code;
+    }
+
+    try {
+      yield* apiGraphql(accessToken: accessToken, serverUri: serverUri);
+    } catch (e) {
+      yield ApiResponse(
+        success: false,
+        errors: [
+          ApiError(
+            code: "013-EXCEPTION",
+            module: "apiConnect",
+            path: "exec EEE",
+            messages: ["Falha na conexão com servidor API", e.toString()],
+          ),
+        ],
+      );
     }
   }
 

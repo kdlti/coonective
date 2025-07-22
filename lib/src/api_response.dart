@@ -60,14 +60,14 @@ class ApiResponse {
 
 // Retorna o endpoint da API especificado pelo nome
   ApiEndpoint endpoint(String name) {
-    if(data == null){
+    if (data == null) {
       return ApiEndpoint(null);
     }
 
     dynamic endpoint;
     endpoint = data[name];
 
-    if(endpoint == null) {
+    if (endpoint == null) {
       // Se o endpoint não for encontrado, lança um erro
       ApiError apiError = ApiError(
         code: "025-ENDPOINT_NOT_FOUND",
@@ -89,13 +89,13 @@ class ApiResponse {
 
   // Retorna o endpoint da API especificado pelo nome
   ApiEndpointMatrix endpointMatrix(String name) {
-    if(data == null){
+    if (data == null) {
       return ApiEndpointMatrix(null);
     }
 
     dynamic endpoint = data;
 
-    if(endpoint == null) {
+    if (endpoint == null) {
       // Se o endpoint não for encontrado, lança um erro
       ApiError apiError = ApiError(
         code: "026-ENDPOINT_NOT_FOUND",

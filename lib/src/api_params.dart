@@ -17,12 +17,11 @@ class ApiParams {
   }
 
   String _extractPath(String queryString) {
-    //TODO:: Resolver o problema de subscription que não necessita de () no final
-    RegExp regExp = RegExp(r'([a-zA-Z_]+\()');
-    Match? match = regExp.firstMatch(queryString);
+    // Captura qualquer palavra depois do tipo (query/mutation/subscription)
+    final regExp = RegExp(r'(query|mutation|subscription)\s+([a-zA-Z_][a-zA-Z0-9_]*)');
+    final match = regExp.firstMatch(queryString);
     if (match != null) {
-      String operation = match.group(1)!;
-      return operation.substring(0, operation.length - 1);
+      return match.group(2)!;
     }
     return '';
   }

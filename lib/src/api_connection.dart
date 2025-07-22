@@ -2,7 +2,6 @@ import 'package:coonective/package.dart';
 import 'package:coonective/src/api_params.dart';
 import 'package:coonective/src/api_query_result.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:graphql/client.dart';
 
 class ApiConnection {
@@ -10,34 +9,31 @@ class ApiConnection {
   GraphQLClient? _graphQLClientSubscription;
 
   ApiConnection(String token, String serverUri) {
-    serverUri = "http://localhost:4600/coonective";
-    //serverUri = "http://54.90.249.204:4600/coonective";
-    //serverUri = "http://100.25.197.120:4600/coonective"; //RAMON
-    //serverUri = "http://44.222.237.145:4600/coonective"; //RAMON
-    //serverUri = "http://23.20.39.252:4600/coonective"; //TERESINA
-    //serverUri = "http://api.kdltelegestao.com/coonective";
-    final HttpLink httpLink = HttpLink(
-      serverUri,
-    );
+    final normalized = serverUri.startsWith('http') ? serverUri : 'http://$serverUri';
+    final wsUri = normalized.replaceFirst('http', 'ws').replaceFirst('https', 'wss');
 
-    final AuthLink authLink = AuthLink(
+    final httpLink = HttpLink(normalized);
+
+    final authLink = AuthLink(
       getToken: () async => 'Bearer $token',
     );
-    Link link = authLink.concat(httpLink);
 
-    /// subscriptions must be split otherwise `HttpLink` will. swallow them
-    String subscriptionUri = 'ws://127.0.0.1:4600/coonective';
-    //String subscriptionUri = 'ws://100.25.197.120:4600/coonective';
+    final link = authLink.concat(httpLink);
 
-    final wsLink = WebSocketLink(
-      subscriptionUri,
-      config: const SocketClientConfig(
-        autoReconnect: true,
-        inactivityTimeout: Duration(seconds: 30),
-      ),
+    final wsLink = WebSocketLink(wsUri,
+        config: SocketClientConfig(
+          autoReconnect: true,
+          inactivityTimeout: const Duration(seconds: 30),
+          initialPayload: () async {
+            return {'Authorization': token};
+          },
+        ));
+
+    final linkSubscription = Link.split(
+      (request) => request.isSubscription,
+      wsLink,
+      link,
     );
-
-    Link linkSubscription = Link.split((request) => request.isSubscription, wsLink, link);
 
     _graphQLClient ??= GraphQLClient(
       link: link,
@@ -166,52 +162,59 @@ class ApiConnection {
     return apiResponse;
   }
 
-  Future<void> subscription(String params, dynamic variables, ValueChanged<ApiResponse> callback,
-      {FetchPolicy fetchPolicy = FetchPolicy.cacheFirst}) async {
+  Stream<ApiResponse> subscription(
+    String params,
+    dynamic variables, {
+    FetchPolicy fetchPolicy = FetchPolicy.cacheFirst,
+  }) {
     ApiParams apiParams = ApiParams(params);
-    try {
-      final options = SubscriptionOptions(
-        document: gql(params),
-        variables: Map<String, dynamic>.from(variables),
-        fetchPolicy: fetchPolicy,
-      );
 
-      Stream<QueryResult<Object?>> queryResult = _graphQLClientSubscription!.subscribe(options);
+    final options = SubscriptionOptions(
+      document: gql(params),
+      variables: Map<String, dynamic>.from(variables),
+      fetchPolicy: fetchPolicy,
+    );
 
-      queryResult.listen((result) {
-        if (result.hasException) {
-          ApiQueryResult apiQueryResult = ApiQueryResult(result.toString());
-          ApiError apiError = ApiError(
-            createdAt: apiQueryResult.timestamp!.toIso8601String(),
-            code: "017-${apiQueryResult.code!}",
-            messages: apiQueryResult.errors,
-            module: apiParams.module,
-            path: apiParams.path,
-            variables: variables,
-          );
-          Api.logError(
-            apiError.toString(),
-            error: apiError.code,
-            stackTrace: StackTrace.current,
-          );
-        } else {
-          callback(ApiResponse(success: true, data: result.data));
-        }
-      });
-    } catch (e) {
-      ApiError apiError = ApiError(
-        code: "018-GRAPHQL_SUBSCRIPTION_FAILED",
-        messages: ["GraphQLClient.subscription() falhou"],
-        module: apiParams.module,
-        path: apiParams.path,
-        variables: variables,
-      );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
-      throw apiError.code;
-    }
+    Stream<QueryResult<Object?>> queryResult = _graphQLClientSubscription!.subscribe(options);
+
+    return queryResult.map((result) {
+      if (result.hasException) {
+        ApiQueryResult apiQueryResult = ApiQueryResult(result.toString());
+        ApiError apiError = ApiError(
+          createdAt: apiQueryResult.timestamp!.toIso8601String(),
+          code: "017-${apiQueryResult.code!}",
+          messages: apiQueryResult.errors,
+          module: apiParams.module,
+          path: apiParams.path,
+          variables: variables,
+        );
+        Api.logError(
+          apiError.toString(),
+          error: apiError.code,
+          stackTrace: StackTrace.current,
+        );
+
+        return ApiResponse(success: false, errors: [apiError]);
+      }
+
+      final data = result.data;
+      if (data != null) {
+        return ApiResponse(success: true, data: data);
+      } else {
+        ApiError apiError = ApiError(
+          code: "019-NO_DATA",
+          messages: ["Nenhum dado retornado pela subscription"],
+          module: apiParams.module,
+          path: apiParams.path,
+          variables: variables,
+        );
+        Api.logError(
+          apiError.toString(),
+          error: apiError.code,
+          stackTrace: StackTrace.current,
+        );
+        return ApiResponse(success: false, errors: [apiError]);
+      }
+    });
   }
 }
