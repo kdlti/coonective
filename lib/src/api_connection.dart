@@ -3,6 +3,7 @@ import 'package:coonective/src/api_params.dart';
 import 'package:coonective/src/api_query_result.dart';
 import 'package:flutter/foundation.dart';
 import 'package:graphql/client.dart';
+import 'dart:convert';
 
 class ApiConnection {
   GraphQLClient? _graphQLClient;
@@ -167,7 +168,8 @@ class ApiConnection {
     dynamic variables, {
     FetchPolicy fetchPolicy = FetchPolicy.cacheFirst,
   }) {
-    ApiParams apiParams = ApiParams(params);
+    final apiParams = ApiParams(params);
+    final operationId = "[${apiParams.module}/${apiParams.path}]";
 
     final options = SubscriptionOptions(
       document: gql(params),
@@ -175,21 +177,22 @@ class ApiConnection {
       fetchPolicy: fetchPolicy,
     );
 
-    Stream<QueryResult<Object?>> queryResult = _graphQLClientSubscription!.subscribe(options);
+    final queryResult = _graphQLClientSubscription!.subscribe(options);
 
     return queryResult.map((result) {
       if (result.hasException) {
-        ApiQueryResult apiQueryResult = ApiQueryResult(result.toString());
-        ApiError apiError = ApiError(
-          createdAt: apiQueryResult.timestamp!.toIso8601String(),
-          code: "017-${apiQueryResult.code!}",
-          messages: apiQueryResult.errors,
+        final exception = result.exception!;
+        final apiError = ApiError(
+          createdAt: DateTime.now().toIso8601String(),
+          code: "017-GRAPHQL_VALIDATION_FAILED",
+          messages: [...exception.graphqlErrors.map((e) => e.message), if (exception.linkException != null) exception.linkException.toString()],
           module: apiParams.module,
           path: apiParams.path,
           variables: variables,
         );
+
         Api.logError(
-          apiError.toString(),
+          "$operationId ${apiError.code} ${apiError.messages.join("; ")}",
           error: apiError.code,
           stackTrace: StackTrace.current,
         );
@@ -199,20 +202,23 @@ class ApiConnection {
 
       final data = result.data;
       if (data != null) {
+        //debugPrint("$operationId Data received: ${jsonEncode(data)}");
         return ApiResponse(success: true, data: data);
       } else {
-        ApiError apiError = ApiError(
+        final apiError = ApiError(
           code: "019-NO_DATA",
           messages: ["Nenhum dado retornado pela subscription"],
           module: apiParams.module,
           path: apiParams.path,
           variables: variables,
         );
+
         Api.logError(
-          apiError.toString(),
+          "$operationId ${apiError.code} ${apiError.messages.first}",
           error: apiError.code,
           stackTrace: StackTrace.current,
         );
+
         return ApiResponse(success: false, errors: [apiError]);
       }
     });
