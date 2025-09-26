@@ -40,6 +40,7 @@ class ApiConnection {
       link: link,
       cache: GraphQLCache(),
       alwaysRebroadcast: true,
+      queryRequestTimeout: Duration(seconds: 15),
     );
 
     _graphQLClientSubscription ??= GraphQLClient(
