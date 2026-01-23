@@ -46,11 +46,7 @@ class ApiConnect {
         path: "_init",
         variables: {"apiClientAuthorize.isValid": apiClientAuthorize.isValid},
       );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
 
@@ -63,11 +59,7 @@ class ApiConnect {
         path: "_init",
         variables: {"isAuthorized": isAuthorized},
       );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
 
@@ -82,11 +74,7 @@ class ApiConnect {
         path: "_init",
         variables: {"accessToken": accessToken},
       );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
   }
@@ -106,11 +94,7 @@ class ApiConnect {
         path: "_init",
         variables: {"apiUserAuthorizeToken.isValid": apiUserAuthorizeToken.isValid, "accessToken": authToken},
       );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
     bool isAuthorizeValid = await apiUserAuthorizeToken.authorize();
@@ -122,11 +106,7 @@ class ApiConnect {
         path: "_init",
         variables: {"isAuthorizeValid": !isAuthorizeValid, "accessToken": authToken},
       );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
     ApiUserAccessToken apiUserAccessToken = ApiUserAccessToken(apiUserAuthorizeToken);
@@ -139,11 +119,7 @@ class ApiConnect {
         path: "_init",
         variables: {"isTokenValid": !isTokenValid, "accessToken": authToken},
       );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
   }
@@ -175,17 +151,8 @@ class ApiConnect {
     String? accessToken = await ApiToken.getAccessToken;
 
     if (accessToken == null || accessToken.isEmpty) {
-      ApiError apiError = ApiError(
-        code: "008-EXCEPTION",
-        module: "apiConnect",
-        path: "exec",
-        messages: ["Falha na conexão com servidor API", "accessToken vazio"],
-      );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      ApiError apiError = ApiError(code: "008-EXCEPTION", module: "apiConnect", path: "exec", messages: ["Falha na conexão com servidor API", "accessToken vazio"]);
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
 
@@ -195,17 +162,8 @@ class ApiConnect {
     // Verifica se o servidor URI está definido
     //TODO: Verificar validação de URI, parece que não está funcionando como esperado
     if (serverUri == null && serverUri!.isEmpty) {
-      ApiError apiError = ApiError(
-        code: "009-EXCEPTION",
-        module: "apiConnect",
-        path: "exec",
-        messages: ["Falha na conexão com servidor API", "serverUri vazio"],
-      );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      ApiError apiError = ApiError(code: "009-EXCEPTION", module: "apiConnect", path: "exec", messages: ["Falha na conexão com servidor API", "serverUri vazio"]);
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
 
@@ -215,28 +173,14 @@ class ApiConnect {
       } else {
         apiResponse = ApiResponse(
           errors: [
-            ApiError(
-              code: "010-NO_INTERNET_CONNECTION",
-              module: "apiConnect",
-              path: "exec",
-              messages: ["Sem conexão com a Internet"],
-            ),
+            ApiError(code: "010-NO_INTERNET_CONNECTION", module: "apiConnect", path: "exec", messages: ["Sem conexão com a Internet"]),
           ],
         );
       }
     } catch (e) {
       print("ERROR: $e");
-      ApiError apiError = ApiError(
-        code: "011-EXCEPTION",
-        module: "apiConnect",
-        path: "exec",
-        messages: ["Falha na conexão com servidor API", e.toString()],
-      );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      ApiError apiError = ApiError(code: "011-EXCEPTION", module: "apiConnect", path: "exec", messages: ["Falha na conexão com servidor API", e.toString()]);
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
     return apiResponse;
@@ -249,12 +193,7 @@ class ApiConnect {
       yield ApiResponse(
         success: false,
         errors: [
-          ApiError(
-            code: "012-NO_INTERNET_CONNECTION",
-            module: "apiConnect",
-            path: "exec AAA",
-            messages: ["Sem conexão com a Internet"],
-          ),
+          ApiError(code: "012-NO_INTERNET_CONNECTION", module: "apiConnect", path: "exec AAA", messages: ["Sem conexão com a Internet"]),
         ],
       );
       return;
@@ -264,17 +203,8 @@ class ApiConnect {
     String? accessToken = await ApiToken.getAccessToken;
 
     if (accessToken == null || accessToken.isEmpty) {
-      ApiError apiError = ApiError(
-        code: "008-EXCEPTION",
-        module: "apiConnect",
-        path: "exec",
-        messages: ["Falha na conexão com servidor API", "accessToken vazio"],
-      );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      ApiError apiError = ApiError(code: "008-EXCEPTION", module: "apiConnect", path: "exec", messages: ["Falha na conexão com servidor API", "accessToken vazio"]);
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
 
@@ -283,17 +213,8 @@ class ApiConnect {
 
     // Verifica se o servidor URI está definido
     if (serverUri.isEmpty) {
-      ApiError apiError = ApiError(
-        code: "009-EXCEPTION",
-        module: "apiConnect",
-        path: "exec",
-        messages: ["Falha na conexão com servidor API", "serverUri vazio"],
-      );
-      Api.logError(
-        apiError.toString(),
-        error: apiError.code,
-        stackTrace: StackTrace.current,
-      );
+      ApiError apiError = ApiError(code: "009-EXCEPTION", module: "apiConnect", path: "exec", messages: ["Falha na conexão com servidor API", "serverUri vazio"]);
+      Api.logError(apiError.toString(), error: apiError.code, stackTrace: StackTrace.current);
       throw apiError.code;
     }
 
@@ -303,12 +224,7 @@ class ApiConnect {
       yield ApiResponse(
         success: false,
         errors: [
-          ApiError(
-            code: "013-EXCEPTION",
-            module: "apiConnect",
-            path: "exec EEE",
-            messages: ["Falha na conexão com servidor API", e.toString()],
-          ),
+          ApiError(code: "013-EXCEPTION", module: "apiConnect", path: "exec EEE", messages: ["Falha na conexão com servidor API", e.toString()]),
         ],
       );
     }
