@@ -190,7 +190,7 @@ class ApiConnect {
     }
 
     // Recupera o servidor URI
-    String? serverUri = dotenv.get("SERVER_URI");
+    String? serverUri = "http://${dotenv.get("COONECTIVE_URL")}/coonective";
 
     // Verifica se o servidor URI está definido
     //TODO: Verificar validação de URI, parece que não está funcionando como esperado
@@ -279,7 +279,7 @@ class ApiConnect {
     }
 
     // Recupera o servidor URI
-    String? serverUri = dotenv.get("SERVER_URI");
+    String? serverUri = "http://${dotenv.get("COONECTIVE_URL")}/coonective";
 
     // Verifica se o servidor URI está definido
     if (serverUri.isEmpty) {
