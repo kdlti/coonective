@@ -45,8 +45,8 @@ class ApiConnection {
 
     _graphQLClientSubscription ??= GraphQLClient(
       link: linkSubscription,
-      cache: GraphQLCache(),
-      alwaysRebroadcast: true,
+      cache: GraphQLCache(dataIdFromObject: (_) => null),
+      alwaysRebroadcast: false,
     );
   }
 
@@ -164,11 +164,7 @@ class ApiConnection {
     return apiResponse;
   }
 
-  Stream<ApiResponse> subscription(
-    String params,
-    dynamic variables, {
-    FetchPolicy fetchPolicy = FetchPolicy.cacheFirst,
-  }) {
+  Stream<ApiResponse> subscription(String params, dynamic variables, {FetchPolicy fetchPolicy = FetchPolicy.noCache}) {
     final apiParams = ApiParams(params);
     final operationId = "[${apiParams.module}/${apiParams.path}]";
 
